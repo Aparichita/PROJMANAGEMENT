@@ -32,7 +32,9 @@
     "expo": "^53.0.20",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mailgen": "^2.0.29",
     "mongodb": "^6.18.0",
-    "mongoose": "^8.18.0"
+    "mongoose": "^8.18.0",
+    "nodemailer": "^7.0.6"
   }
 }
