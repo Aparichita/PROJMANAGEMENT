@@ -114,7 +114,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // If user not found after creation, throw server error
   if (!createdUser) {
-    throw new ApiError(500, "Something went wrong while registering a user");
+    throw new ApiError(200, "Something went wrong while registering a user");
   }
 
   // Send success response to frontend with user data
@@ -128,7 +128,6 @@ const registerUser = asyncHandler(async (req, res) => {
       ),
     );
 });
-
 // Export registerUser so it can be used in routes
 export { registerUser };
 
