@@ -129,7 +129,77 @@ const registerUser = asyncHandler(async (req, res) => {
     );
 });
 // Export registerUser so it can be used in routes
-export { registerUser };
+
+// ------------------- Login User -------------------
+
+const login = asyncHandler(async (req, res) => {
+  // Extract email, password, username from the frontend request body
+  const { email, password, username } = req.body;
+
+  // Check if at least username OR email is provided
+  // (right now we only search by email, so username isn't actually used)
+  if (!username || !email) {
+    throw new ApiError(400, "Username or email is required");
+  }
+
+  // Look up the user in the database by email
+  const user = await User.findOne({ email });
+
+  // If no user found, throw error
+  if (!user) {
+    throw new ApiError(400, "User does not exist");
+  }
+
+  // Compare entered password with the hashed password stored in DB
+  // isPasswordCorrect → custom method in User model (uses bcrypt.compare)
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  // If password does not match, throw error
+  if (!isPasswordValid) {
+    throw new ApiError(400, "Invalid credentials");
+  }
+
+  // Generate both access and refresh tokens for this user
+  const { accessToken, refreshToken } =
+    await generateAccessAndRefreshTokens(user._id);
+
+  // Re-fetch user but exclude sensitive fields
+  // (password, tokens, and verification fields)
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+
+  // Cookie options to keep tokens safe
+  // httpOnly → frontend JavaScript cannot read this cookie
+  // secure   → cookie only sent over HTTPS
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  // Send success response:
+  // 1. Store tokens in cookies
+  // 2. Send user data + tokens in JSON response too
+  return res
+    .status(200) // success
+    .cookie("accessToken", accessToken, options) // set accessToken in cookie
+    .cookie("refreshToken", refreshToken, options) // set refreshToken in cookie
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser, // safe user info (without password)
+          accessToken,
+          refreshToken,
+        },
+        "User logged in successfully"
+      )
+    );
+});
+
+// Export functions so they can be used in routes
+export { registerUser, login };
+
 
 /*req.body = the data the frontend sends to your backend in the request body.
 
